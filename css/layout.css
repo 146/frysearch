@@ -1,0 +1,64 @@
+body {
+	background: url("../static/dark_squares.jpg") repeat;
+	color: #fff;
+	font-family: Helvetica Neue;
+	font-weight: lighter;
+	font-size: 16px;
+}
+
+#container-title {
+	margin-top: 40px;
+	font-family: Futura;
+}
+
+#container-video {
+	width: 853px;
+	border: 15px solid #333;
+	border-radius: 10px;	
+}
+
+#container-searchbar {
+	position: relative;
+	margin-top: 20px;
+}
+
+#container-footer {
+	color: black;
+}
+
+#searchbar {
+	position: relative;
+	height: 80px;
+	width: 100%;
+	font-size: 300%;
+	padding: 20px;
+	padding-right: 80px;
+	margin: 0;
+	border: 0;
+}
+
+#searchbutton {
+	position: absolute;
+	margin: 0;
+	right: 0;
+	top: 0;
+}
+
+.quote {
+	background-color: black;
+	color: white;
+	padding: 10px;
+	letter-spacing: 0.6px;
+	padding-bottom: 0;
+}
+
+.video-preview {
+	background-color: black;
+	padding: 5px;
+	padding-top: 10px;
+	margin-top: 10px;
+}
+
+.video-box {
+	padding-top: 10px;
+}
