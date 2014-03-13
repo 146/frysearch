@@ -1,7 +1,7 @@
 Object.prototype.fnbind = function(oldFunction) {
     var self = this;
     return function() {
-        return self.apply(oldFunction, arguments);
+        return oldFunction.apply(self, arguments);
     }
 }
 
@@ -45,10 +45,10 @@ exports.IndexIterator = ClassCreate({
     },
 
     next: function() {
-        this.iteratorIndex++;
+        this.position++;
         // Break if past index length or token no longer prefix of current index pointer.
         if ((this.position >= this.index.length) ||
-            (this.index[this.position] > this.tokenEnd)) {
+            (this.index[this.position].token > this.tokenEnd)) {
             return null;
         } else {
             return this.index[this.position];
@@ -72,28 +72,30 @@ exports.ResultsSet = ClassCreate({
         // TODO: Be able to extend ResultsSets with other ResultsSets.
         var postings = [];
         for (var posting in this.results) {
-            postings.push(posting);
+            if (typeof(this.results[posting]) == "number") {
+                postings.push(posting);
+            }
         }
         return postings;
     }
 
 });
 
-smallestIndexGreaterThan = function(arr, value, minIndex, maxIndex) {
+var smallestIndexGreaterThan = function(arr, value, minIndex, maxIndex) {
     // arr[minIndex] should always be less than value or 0
     // arr[maxIndex] should always be greater than value
     // minIndex should always be less than or equal to maxIndex
     if (minIndex >= maxIndex - 1) {
         return maxIndex;
     }
-    else if (arr[minIndex] > value) {
+    else if (arr[minIndex].token > value) {
         return minIndex;
     }
-    else if (arr[maxIndex] < value) {
+    else if (arr[maxIndex].token < value) {
         return undefined;
     }
-    var checkIndex = (minIndex + maxIndex) / 2;
-    var checkValue = arr[checkIndex];
+    var checkIndex = Math.floor((minIndex + maxIndex) / 2);
+    var checkValue = arr[checkIndex].token;
     if (checkValue == value) {
         return checkIndex;
     }
@@ -112,7 +114,7 @@ exports.SortedIndex = ClassCreate({
     },
 
     getTokenIterator: function(token) {
-        var iteratorStart = smallestIndexGreaterThan(this.index, token, 0, this.index.length);
+        var iteratorStart = smallestIndexGreaterThan(this.index, token, 0, this.index.length - 1);
         if (iteratorStart === undefined) {
             return undefined;
         }
@@ -126,7 +128,7 @@ exports.SortedIndex = ClassCreate({
 
     search: function(query) {
         var tokens = this.tokenize(query);
-        return searchIntersectionOfTokens(tokens);
+        return this.searchIntersectionOfTokens(tokens);
     },
 
     searchIntersectionOfTokens: function(tokens) {
@@ -134,6 +136,7 @@ exports.SortedIndex = ClassCreate({
         var postingCount = {};
         tokens.forEach(this.fnbind(function(token) {
             var postings = this.searchToken(token);
+            console.log("search " + token + ": " + postings);
             postings.forEach(function(posting) {
                 if (postingCount[posting] === undefined) {
                     postingCount[posting] = 1;
@@ -144,7 +147,9 @@ exports.SortedIndex = ClassCreate({
         }));
         var postingCountItems = [];
         for (var posting in postingCount) {
-            postingCountItems.push([-postingCount[posting], posting]);
+            if (typeof(postingCount[posting]) == "number") {
+                postingCountItems.push([-postingCount[posting], posting]);
+            }
         }
         postingCountItems.sort()
         return postingCountItems;
@@ -153,16 +158,16 @@ exports.SortedIndex = ClassCreate({
     searchToken: function(token) {
         // TODO: optimize by memoizing intermediate results.
         var indexIterator = this.getTokenIterator(token);
-        var results = new ResultsSet();
+        var results = new exports.ResultsSet();
         if (indexIterator === undefined) {
             return results.toArray();
         }
         for (
             var postingsList = indexIterator.first();
-                postingsList = indexIterator.next();
-                postingsList != null
+                postingsList != null;
+                postingsList = indexIterator.next()
             ) {
-            results.add(postingsList.documents);
+            results.add(postingsList.postings);
         }
         return results.toArray();
     },
