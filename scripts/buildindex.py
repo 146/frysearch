@@ -3,6 +3,7 @@
 import sys
 import string
 import json
+import quotes
 
 def _tokenize(document):
 	document = document.lower()
@@ -17,24 +18,39 @@ def _tokenize(document):
 class SearchIndex(object):
 
 	def __init__(self):
+		self.forward_index = {}
 		self.postings_list = {}
+		self.document_id = 0
 
-	def add_document(self, document_id, document):
+	def get_document_id(self):
+		self.document_id += 1
+		return self.document_id
+
+	def add_document(self, document, document_info):
+		document_id = self.get_document_id()
 		tokens = _tokenize(document)
 		for token in tokens:
 			self.postings_list.setdefault(token, []).append(document_id)
+		self.forward_index[document_id] = {
+			'document': document
+			}
+		self.forward_index[document_id].update(document_info)
 
 	def to_json(self):
 		sorted_index = [
-			{ "token": token, "postings": postings }
+			{ "token": token, "postings": list(set(postings)) }
 			for token, postings in self.postings_list.items()
 		]
 		sorted_index.sort(key=lambda e: e['token'])
-		return json.dumps(sorted_index)
+		full_index = {
+			'sortedIndex': sorted_index,
+			'forwardIndex': self.forward_index,
+		}
+		return json.dumps(full_index)
 
 if __name__ == '__main__':
-	raw = open(sys.argv[1]).read()
 	index = SearchIndex()
-	for i, line in enumerate(raw.splitlines()):
-		index.add_document(i, line)
-	print "exports.rawIndex = " + index.to_json() + ";"
+	for i, document in enumerate(quotes.QUOTES):
+		url, text = document
+		index.add_document(text, {'url': url})
+	print "this.RAW_INDEX = " + index.to_json() + ";"

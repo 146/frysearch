@@ -2,6 +2,10 @@
 <head>
 <link rel="stylesheet" type="text/css" href="css/bootstrap.css"></link>
 <link rel="stylesheet" type="text/css" href="css/layout.css"></link>
+<script type="text/javascript" src="js/jquery-1.11.0.js"></script>
+<script type="text/javascript" src="js/raw_index.js"></script>
+<script type="text/javascript" src="js/search.js"></script>
+<script type="text/javascript" src="js/client.js"></script>
 </head>
 <body>
 	<div class="container">
@@ -13,10 +17,15 @@
 			<input id="searchbar"></input>
 			<img id="searchbutton" src="static/search_grey.png"/>
 		</div>
+
+		<!--video src="videos/stop-dying-and-fix-my-gyroscope.mkv" autoplay width="100%">
+  			Your browser does not support the <code>video</code> element.
+		</video>-->
+
 		<div id="container-searchresults">
 
 			<div class="row">
-				<div class="span4 video-box">
+				<div id="results-col-1" class="span4 video-box">
 					<div class="video-preview">
 						<img src="static/screen1.png"/>
 						<p class="quote">Professor Hubert Farnsworth: Good news everyone!</p>
@@ -30,7 +39,7 @@
 						<p class="quote">Hermes Conrad: I'm more hungry than a green snake in a sugar cane field!</p>
 					</div>
 				</div>
-				<div class="span4 video-box">
+				<div id="results-col-2" class="span4 video-box">
 					<div class="video-preview">
 						<img src="static/screen2.png"/>
 						<p class="quote">Fry: You know the worst thing about being a slave? They make you work, but don't pay you or let you go.<br/>Turanga Leela: That's the only thing about being a slave.</p>
@@ -44,7 +53,7 @@
 						<p class="quote">Turanga Leela: So long, jerkwads!</p>
 					</div>
 				</div>
-				<div class="span4 video-box">
+				<div id="results-col-3" class="span4 video-box">
 					<div class="video-preview">
 						<img src="static/screen3.png"/>
 						<p class="quote">Professor Hubert Farnsworth: No! I was about to close the deal! Fry: Bender! They had a backwards time machine!</p>
@@ -64,11 +73,3 @@
 	</div>
 </body>
 </html>
-
-<!--
-<h1>Shut up and take my money!</h1>
-<div id="container-video">
-	<iframe width="853" height="480" src="http://www.youtube.com/embed/8QfSzgV1q5g?autoplay=1&showinfo=0&controls=0" frameborder="0" allowfullscreen>
-	</iframe>
-</div>
---!>

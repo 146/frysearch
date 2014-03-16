@@ -1,5 +1,6 @@
 body {
-	background: url("../static/dark_squares.jpg") repeat;
+	/* background: url("../static/dark_squares.jpg") repeat; */
+	background-color: #444;
 	color: #fff;
 	font-family: Helvetica Neue;
 	font-weight: lighter;
