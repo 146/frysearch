@@ -38,24 +38,31 @@ function installSearchBarHandlers() {
 function createDocumentPreviewElement(documentInfo) {
 	var url = documentInfo.url;
 	var quote = documentInfo.document;
-	// TODO: Remove unsafe code.
-	var htmlStr = '<div class="video-preview"><a href="' + url + '"><img src="' + url + '.jpg"/><p class="quote">' + quote + '</p></a></div>'
-	return htmlStr;
+
+	var $newElement = $('<div class="video-preview"></div>');
+	var $newLink = $('<a></a>').attr('href', url);
+	var $newImage = $('<img></img>').attr('src', url + '.jpg');
+	var $newQuote = $('<p class="quote"></p>');
+
+	$newQuote.text(quote);
+	$newLink.append($newImage);
+	$newLink.append($newQuote);
+	$newElement.append($newLink);
+	return $newElement;
 }
 
 function updateSearchResults(results) {
-	$('#results-col-1').empty();
-	$('#results-col-2').empty();
-	$('#results-col-3').empty();
-
-	var indexToCol = {
-		0: $('#results-col-1'),
-		1: $('#results-col-2'),
-		2: $('#results-col-3')
-	}
-	console.log(results);
+	var columns = [
+		$('#results-col-1'),
+		$('#results-col-2'),
+		$('#results-col-3')		
+	];
+	var indexToCol = {};
+	columns.forEach(function(col, i) {
+		col.empty();
+		indexToCol[i] = col;
+	});
 	results.forEach(function(result, i) {
-		console.log(result);
 		if (result !== undefined) {
 			var $columnElement = indexToCol[i % 3];
 			var newElement = createDocumentPreviewElement(result);
