@@ -86,9 +86,11 @@
             this.results = {};
         },
 
-        add: function(posting) {
+        add: function(postings) {
             // TODO: Modify for TFIDF
-            this.results[posting] = 1;
+            postings.forEach(this.fnbind(function(posting) {
+                this.results[posting] = 1;
+            }));
         },
 
         toArray: function() {
@@ -146,8 +148,11 @@
         },
 
         tokenize: function(string) {
-            var words = string.toLowerCase().split(/ /);
-            return words.map(function(s) { return s.replace(/\W/g, '') });
+            var words = string.toLowerCase().split(/\s+/);
+            return (words
+                .map(function(s) { return s.replace(/\W/g, '') })
+                .filter(function(s) { return !s.match(/^\s*$/) })
+                );
         },
 
         search: function(query) {
@@ -165,7 +170,7 @@
             var postingCount = {};
             tokens.forEach(this.fnbind(function(token) {
                 var postings = this.searchToken(token);
-                _log("search " + token + ": " + postings);
+                _log("Search", token, "=", postings);
                 postings.forEach(function(posting) {
                     if (postingCount[posting] === undefined) {
                         postingCount[posting] = 1;
@@ -177,6 +182,7 @@
             var postingCountItems = [];
             for (var posting in postingCount) {
                 if (typeof(postingCount[posting]) == "number") {
+                    _log(posting, postingCount[posting]);
                     postingCountItems.push([postingCount[posting], posting]);
                 }
             }
@@ -189,7 +195,6 @@
             // TODO: optimize by memoizing intermediate results.
             var indexIterator = this.getTokenIterator(token);
             var results = new exports.ResultsSet();
-            _log("search token: " + token);
             if (indexIterator === undefined) {
                 return results.toArray();
             }
@@ -198,7 +203,6 @@
                     postingsList != null;
                     postingsList = indexIterator.next()
                 ) {
-                _log("Adding " + postingsList.postings);
                 results.add(postingsList.postings);
             }
             return results.toArray();

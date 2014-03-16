@@ -28,7 +28,7 @@ function installVideoHandlers() {
 
 function installSearchBarHandlers() {
 	var index = new FrySearch.SortedIndex(RAW_INDEX.sortedIndex, RAW_INDEX.forwardIndex);
-	$('#searchbar').keydown(function (e) {
+	$('#searchbar').keyup(function (e) {
 		var searchQuery = e.target.value;
 		var searchResults = index.search(searchQuery);
 		updateSearchResults(searchResults);
@@ -46,13 +46,16 @@ function createDocumentPreviewElement(documentInfo) {
 function updateSearchResults(results) {
 	$('#results-col-1').empty();
 	$('#results-col-2').empty();
-	$('#results-col-3').empty();		
+	$('#results-col-3').empty();
+
 	var indexToCol = {
 		0: $('#results-col-1'),
 		1: $('#results-col-2'),
 		2: $('#results-col-3')
 	}
+	console.log(results);
 	results.forEach(function(result, i) {
+		console.log(result);
 		if (result !== undefined) {
 			var $columnElement = indexToCol[i % 3];
 			var newElement = createDocumentPreviewElement(result);

@@ -9,3 +9,4 @@ console.log(exports.index.search('blackja'));
 console.log(exports.index.search('old'));
 console.log(exports.index.search('old fash'));
 console.log(exports.index.search('i we'));
+console.log(exports.index.search(''));
