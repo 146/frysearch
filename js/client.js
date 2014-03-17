@@ -2,6 +2,7 @@ $(document).ready(function() {
 
 	installVideoHandlers();
 	installSearchBarHandlers();
+	$('#searchbar').keyup();
 
 });
 
@@ -28,14 +29,26 @@ function installVideoHandlers() {
 
 function installSearchBarHandlers() {
 	var index = new FrySearch.SortedIndex(RAW_INDEX.sortedIndex, RAW_INDEX.forwardIndex);
-	$('#searchbar').keyup(function (e) {
-		var searchQuery = e.target.value;
-		var searchResults = index.search(searchQuery);
-		updateSearchResults(searchResults);
+	var timer = null;
+	var last = null;
+	function update(target) {
+		var searchQuery = target.value;
+		if (searchQuery != last) {
+			last = searchQuery;
+			var tokens = index.tokenize(searchQuery);		
+			var searchResults = index.search(searchQuery);
+			updateSearchResults(searchResults, tokens);
+		}
+	}
+	$('#searchbar').focus(function(e) {
+		timer = setInterval(function() { update(e.target) }, 200)
+	});
+	$('#searchbar').blur(function(e) {
+		clearInterval(timer);
 	});
 }
 
-function createDocumentPreviewElement(documentInfo) {
+function createDocumentPreviewElement(documentInfo, tokens) {
 	var url = documentInfo.url;
 	var quote = documentInfo.document;
 
@@ -44,14 +57,20 @@ function createDocumentPreviewElement(documentInfo) {
 	var $newImage = $('<img></img>').attr('src', url + '.jpg');
 	var $newQuote = $('<p class="quote"></p>');
 
-	$newQuote.text(quote);
+	if (tokens !== undefined) {
+		tokens.forEach(function(token) {
+			quote = quote.replace(new RegExp('\\b(' + token + ')', 'ig'), '<b>$1</b>');
+		});
+	}
+
+	$newQuote.html(quote);
 	$newLink.append($newImage);
 	$newLink.append($newQuote);
 	$newElement.append($newLink);
 	return $newElement;
 }
 
-function updateSearchResults(results) {
+function updateSearchResults(results, tokens) {
 	var columns = [
 		$('#results-col-1'),
 		$('#results-col-2'),
@@ -65,7 +84,7 @@ function updateSearchResults(results) {
 	results.forEach(function(result, i) {
 		if (result !== undefined) {
 			var $columnElement = indexToCol[i % 3];
-			var newElement = createDocumentPreviewElement(result);
+			var newElement = createDocumentPreviewElement(result, tokens);
 			$columnElement.append(newElement);
 		}
 	});
