@@ -83,11 +83,15 @@ def splitsrt(fname):
 	units = raw.strip().split('\n\n')
 	ret = []
 	for unit in units:
-		lines = unit.splitlines()
-		unit_id = lines[0]
-		timestamp_begin, timestamp_end = lines[1].replace(',', '.').split(' --> ')
-		text = '\n'.join(lines[2:])
-		ret.append(SRTUnit(unit_id, timestamp_begin, timestamp_end, text))
+		try:
+			lines = unit.splitlines()
+			unit_id = lines[0]
+			timestamp_begin, timestamp_end = lines[1].replace(',', '.').split(' --> ')
+			text = '\n'.join(lines[2:])
+			ret.append(SRTUnit(unit_id, timestamp_begin, timestamp_end, text))
+		except:
+			print >> sys.stderr, "Problem handling unit:"
+			print >> sys.stderr, unit
 	return ret
 
 def combinesrt(units):
@@ -103,24 +107,37 @@ def combinesrt(units):
 	return ret
 
 if __name__ == '__main__':
-	fname = sys.argv[1]
-	videofile = sys.argv[2]
+	command = sys.argv[1]
+	assert command in ('--info', '--process', '--index'), "Invalid command."
+	
+	fname = sys.argv[2]
+	videofile = sys.argv[3]
 	units = splitsrt(fname)
 	blocks = combinesrt(units)
 	totalwords = 0
 	for block in blocks:
-		#print block.title()
-		#print block
-		#print
+		if command == '--info':
+			print block.title()
+			print block
+			print
 		start = timestamp_to_seconds(block.timestamp_begin) - BLOCK_MARGIN
 		diff = timestamp_to_seconds(block.timestamp_end) - timestamp_to_seconds(block.timestamp_begin) + BLOCK_MARGIN * 2
-		print "ffmpeg -y -i {fname} -ss {start} -t {diff} -vcodec libx264 -acodec libmp3lame {title}.mkv".format(
-			fname=videofile,
-			start=seconds_to_timestamp(start),
-			diff=diff,
-			title=block.title()
-			)
+		if command == '--process':
+			print "ffmpeg -y -i {fname} -ss {start} -t {diff} -vcodec libx264 -acodec libmp3lame {title}.mkv".format(
+				fname=videofile,
+				start=seconds_to_timestamp(start),
+				diff=diff,
+				title=block.title()
+				)
+		if command == '--index':
+			print '('
+			print '    "videos/{title}.mkv",'.format(title=block.title())
+			print '"""'
+			print block.text()
+			print '"""'
+			print '),'
 		totalwords += len(block.text().split())
 	average = float(totalwords) / len(blocks)
-	#print 'Number of blocks: %d' % len(blocks)
-	#print 'Average block length: %d words' % average
+	if command == '--info':
+		print 'Number of blocks: %d' % len(blocks)
+		print 'Average block length: %d words' % average
