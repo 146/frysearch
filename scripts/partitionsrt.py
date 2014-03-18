@@ -31,11 +31,7 @@ class SRTUnit(object):
 		self.unit_id = unit_id
 		self.timestamp_begin = timestamp_begin
 		self.timestamp_end = timestamp_end
-		self.text = text
-		self.text = re.sub(r'II', r'll', self.text)
-		self.text = re.sub(r'([A-Za-z])I', r'\1l', self.text)
-		self.text = re.sub(r' I([a-z])', r' l\1', self.text)
-		self.text = ' '.join(self.text.splitlines())
+		self.text = ' '.join(text.splitlines())
 
 	def __str__(self):
 		return "{begin} - {end}: {text}".format(
