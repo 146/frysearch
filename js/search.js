@@ -1,7 +1,7 @@
 (function(exports) {
 
-    Object.prototype.fnbind = function(oldFunction) {
-        var self = this;
+    Function.prototype.bind = function(self) {
+        var oldFunction = this;
         return function() {
             return oldFunction.apply(self, arguments);
         }
@@ -88,9 +88,9 @@
 
         add: function(postings) {
             // TODO: Modify for TFIDF
-            postings.forEach(this.fnbind(function(posting) {
+            postings.forEach((function(posting) {
                 this.results[posting] = 1;
-            }));
+            }).bind(this));
         },
 
         toArray: function() {
@@ -158,17 +158,17 @@
         search: function(query) {
             var tokens = this.tokenize(query);
             var results = this.searchIntersectionOfTokens(tokens);
-            return results.map(this.fnbind(function(searchResult) {
+            return results.map((function(searchResult) {
                 var score = searchResult[0];
                 var documentId = searchResult[1];
                 return this.forwardIndex[documentId];
-            }));
+            }).bind(this));
         },
 
         searchIntersectionOfTokens: function(tokens) {
             // TODO: optimize by memoizing intermediate results.
             var postingCount = {};
-            tokens.forEach(this.fnbind(function(token) {
+            tokens.forEach((function(token) {
                 var postings = this.searchToken(token);
                 _log("Search", token, "=", postings);
                 postings.forEach(function(posting) {
@@ -178,7 +178,7 @@
                         postingCount[posting]++;
                     }
                 })
-            }));
+            }).bind(this));
             var postingCountItems = [];
             for (var posting in postingCount) {
                 if (typeof(postingCount[posting]) == "number") {
