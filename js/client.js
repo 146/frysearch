@@ -2,7 +2,7 @@ $(document).ready(function() {
 
 	installVideoHandlers();
 	installSearchBarHandlers();
-	$('#searchbar').keyup();
+	$('#searchbar').focus();
 
 });
 
@@ -49,7 +49,7 @@ function installSearchBarHandlers() {
 }
 
 function createDocumentPreviewElement(documentInfo, tokens) {
-	var url = documentInfo.url;
+	var url = 'videos/' + documentInfo.url;
 	var quote = documentInfo.document;
 
 	var $newElement = $('<div class="video-preview"></div>');
