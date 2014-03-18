@@ -23,6 +23,9 @@ def seconds_to_timestamp(seconds):
 		minutes=minutes,
 		seconds=seconds)
 
+class SRTBreak(object):
+	pass
+
 class SRTUnit(object):
 	def __init__(self, unit_id, timestamp_begin, timestamp_end, text):
 		self.unit_id = unit_id
@@ -53,6 +56,8 @@ class SRTBlock(object):
 		return '\n'.join(self.text_lines)
 
 	def add(self, unit):
+		if isinstance(unit, SRTBreak):
+			return
 		if self.timestamp_begin is None:
 			self.timestamp_begin = unit.timestamp_begin
 		self.timestamp_end = unit.timestamp_end
@@ -62,7 +67,9 @@ class SRTBlock(object):
 			self.text_lines.append(new_text)
 
 	def should_add(self, unit):
-		if self.timestamp_end is None and self.timestamp_begin is None:
+		if isinstance(unit, SRTBreak):
+			return False
+		elif self.timestamp_end is None and self.timestamp_begin is None:
 			return True
 		else:
 			end = timestamp_to_seconds(self.timestamp_end)
@@ -91,15 +98,18 @@ def splitsrt(fname):
 		unit = unit.strip()
 		if not unit:
 			continue
-		try:
-			lines = unit.splitlines()
-			unit_id = lines[0]
-			timestamp_begin, timestamp_end = lines[1].replace(',', '.').split(' --> ')
-			text = '\n'.join(lines[2:])
-			ret.append(SRTUnit(unit_id, timestamp_begin, timestamp_end, text))
-		except:
-			print >> sys.stderr, "Problem handling unit:"
-			print >> sys.stderr, unit
+		elif unit.strip() == 'BREAK':
+			ret.append(SRTBreak())
+		else:
+			try:
+				lines = unit.splitlines()
+				unit_id = lines[0]
+				timestamp_begin, timestamp_end = lines[1].replace(',', '.').split(' --> ')
+				text = '\n'.join(lines[2:])
+				ret.append(SRTUnit(unit_id, timestamp_begin, timestamp_end, text))
+			except:
+				print >> sys.stderr, "Problem handling unit:"
+				print >> sys.stderr, unit
 	return ret
 
 def combinesrt(units):
@@ -163,7 +173,7 @@ if __name__ == '__main__':
 	totalwords = 0
 
 	if command == 'process':
-		dbconn = sqlite3.connect(db_fname)
+		dbconn = sqlite3.connect(options.db_fname)
 		dbconn.text_factory = str
 		cursor = dbconn.cursor()
 
@@ -184,7 +194,8 @@ if __name__ == '__main__':
 				diff=diff,
 				outfile=os.path.join(options.output_dname, block.title() + '.mkv')
 				)
-			screencap_cmd = "ffmpeg -y -i {title}.mkv -ss 00:00:01 -vframes 1 {outfile}".format(
+			screencap_cmd = "ffmpeg -y -i {clip_fname} -ss 00:00:01 -vframes 1 {outfile}".format(
+				clip_fname=os.path.join(options.output_dname, block.title() + '.mkv'),
 				outfile=os.path.join(options.output_dname, block.title() + '.mkv.jpg'))
 
 			assert os.system(build_cmd) == 0, "Build command failed: %s" % build_cmd
