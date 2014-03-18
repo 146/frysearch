@@ -4,6 +4,7 @@ import sys
 import string
 import json
 import quotes
+import sqlite3
 
 def _tokenize(document):
 	document = document.lower()
@@ -50,7 +51,16 @@ class SearchIndex(object):
 
 if __name__ == '__main__':
 	index = SearchIndex()
-	for i, document in enumerate(quotes.QUOTES):
-		url, text = document
-		index.add_document(text, {'url': url})
+	dbname = sys.argv[1]
+	dbconn = sqlite3.connect(dbname)
+	cursor = dbconn.cursor()
+
+	cursor.execute('SELECT * FROM quotes')
+	while True:
+		row = cursor.fetchone()
+		if row:
+			_, url, _, text = row
+			index.add_document(text, {'url': url})
+		else:
+			break
 	print "this.RAW_INDEX = " + index.to_json() + ";"

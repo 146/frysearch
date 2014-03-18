@@ -2,6 +2,8 @@
 
 import sys
 import re
+import sqlite3
+import os
 
 BLOCK_GAP = 1.0
 BLOCK_MARGIN = 0.5
@@ -52,7 +54,8 @@ class SRTBlock(object):
 		if self.timestamp_begin is None:
 			self.timestamp_begin = unit.timestamp_begin
 		self.timestamp_end = unit.timestamp_end
-		new_text = re.sub(r'\(.*\)', '', unit.text).strip()
+		new_text = re.sub(r'\(.*\)', '', unit.text)
+		new_text = re.sub(r'\[.*\]', '', new_text).strip()
 		if new_text:
 			self.text_lines.append(new_text)
 
@@ -83,6 +86,9 @@ def splitsrt(fname):
 	units = raw.strip().split('\n\n')
 	ret = []
 	for unit in units:
+		unit = unit.strip()
+		if not unit:
+			continue
 		try:
 			lines = unit.splitlines()
 			unit_id = lines[0]
@@ -108,36 +114,55 @@ def combinesrt(units):
 
 if __name__ == '__main__':
 	command = sys.argv[1]
-	assert command in ('--info', '--process', '--index'), "Invalid command."
-	
+	assert command in ('--info', '--index'), "Invalid command."
+
 	fname = sys.argv[2]
 	videofile = sys.argv[3]
+	if command == '--index':
+		dbfile = sys.argv[4]
+
 	units = splitsrt(fname)
 	blocks = combinesrt(units)
 	totalwords = 0
+
+	if command == '--index':
+		dbconn = sqlite3.connect(dbfile)
+		dbconn.text_factory = str
+		cursor = dbconn.cursor()
+
 	for block in blocks:
 		if command == '--info':
 			print block.title()
 			print block
 			print
+
 		start = timestamp_to_seconds(block.timestamp_begin) - BLOCK_MARGIN
 		diff = timestamp_to_seconds(block.timestamp_end) - timestamp_to_seconds(block.timestamp_begin) + BLOCK_MARGIN * 2
-		if command == '--process':
-			print "ffmpeg -y -i {fname} -ss {start} -t {diff} -vcodec libx264 -acodec libmp3lame {title}.mkv".format(
+		if command == '--index':
+			build_cmd = "ffmpeg -y -i {fname} -ss {start} -t {diff} -sn -vcodec libx264 -acodec libmp3lame {title}.mkv".format(
 				fname=videofile,
 				start=seconds_to_timestamp(start),
 				diff=diff,
 				title=block.title()
 				)
-		if command == '--index':
-			print '('
-			print '    "videos/{title}.mkv",'.format(title=block.title())
-			print '"""'
-			print block.text()
-			print '"""'
-			print '),'
+			screencap_cmd = "ffmpeg -y -i {title}.mkv -ss 00:00:01 -vframes 1 {title}.mkv.jpg".format(
+				title=block.title())
+
+			assert os.system(build_cmd) == 0, "Build command failed: %s" % build_cmd
+			assert os.system(screencap_cmd) == 0, "Screencap command failed: %s" % screencap_cmd
+
+			# Insert quote information into SQLLite DB.
+			cursor.execute("INSERT INTO quotes (title, video_url, preview_url, quote) VALUES (?, ?, ?, ?)",
+				(block.title(), block.title() + '.mkv', block.title() + '.mkv.jpg', block.text())
+				)
+
 		totalwords += len(block.text().split())
-	average = float(totalwords) / len(blocks)
+
 	if command == '--info':
+		average = float(totalwords) / len(blocks)
 		print 'Number of blocks: %d' % len(blocks)
 		print 'Average block length: %d words' % average
+
+	if command == '--index':
+		dbconn.commit()
+		dbconn.close()
