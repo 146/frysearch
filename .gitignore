@@ -1,4 +1,6 @@
 .DS_STORE
 *.pyc
+js/raw_index.js
+quotes.db
 bootstrap/
 videos/
