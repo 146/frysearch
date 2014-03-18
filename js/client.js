@@ -59,7 +59,7 @@ function createDocumentPreviewElement(documentInfo, tokens) {
 
 	if (tokens !== undefined) {
 		tokens.forEach(function(token) {
-			quote = quote.replace(new RegExp('\\b(' + token + ')', 'ig'), '<b>$1</b>');
+			quote = quote.replace(new RegExp('\\b(' + token + ')', 'ig'), '<span class="highlight">$1</span>');
 		});
 	}
 
