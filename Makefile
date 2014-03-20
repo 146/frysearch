@@ -1,8 +1,8 @@
-quotes.db:
-	echo "Creating quotes database..."
-	echo "CREATE TABLE quotes (title VARCHAR(255), video_url VARCHAR(255), preview_url VARCHAR(255), quote TEXT, PRIMARY KEY (title));" | sqlite3 quotes.db
+documents.db:
+	echo "Creating document database..."
+	echo "CREATE TABLE quotes (document_title VARCHAR(255), document_text TEXT, document_info_json TEXT, PRIMARY KEY (document_title));" | sqlite3 documents.db
 
-js/raw_index.js: quotes.db
+js/raw_index.js: documents.db
 	python scripts/buildindex.py quotes.db > js/raw_index.js
 
-all: quotes.db js/raw_index.js
+all: documents.db js/raw_index.js
