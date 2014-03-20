@@ -157,7 +157,7 @@
 
         search: function(query) {
             var tokens = this.tokenize(query);
-            var results = this.searchIntersectionOfTokens(tokens);
+            var results = this.searchUnionOfTokens(tokens);
             return results.map((function(searchResult) {
                 var score = searchResult[0];
                 var documentId = searchResult[1];
@@ -165,7 +165,7 @@
             }).bind(this));
         },
 
-        searchIntersectionOfTokens: function(tokens) {
+        searchUnionOfTokens: function(tokens) {
             // TODO: optimize by memoizing intermediate results.
             var postingCount = {};
             tokens.forEach((function(token) {
