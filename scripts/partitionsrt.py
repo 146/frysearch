@@ -23,7 +23,16 @@ def seconds_to_timestamp(seconds):
 		minutes=minutes,
 		seconds=seconds)
 
-class SRTBreak(object):
+class SRTCommand(object):
+	pass
+
+class SRTBreak(SRTCommand):
+	pass
+
+class SRTBegin(SRTCommand):
+	pass
+
+class SRTEnd(SRTCommand):
 	pass
 
 class SRTUnit(object):
@@ -52,7 +61,7 @@ class SRTBlock(object):
 		return '\n'.join(self.text_lines)
 
 	def add(self, unit):
-		if isinstance(unit, SRTBreak):
+		if isinstance(unit, SRTCommand):
 			return
 		if self.timestamp_begin is None:
 			self.timestamp_begin = unit.timestamp_begin
@@ -63,7 +72,7 @@ class SRTBlock(object):
 			self.text_lines.append(new_text)
 
 	def should_add(self, unit):
-		if isinstance(unit, SRTBreak):
+		if isinstance(unit, SRTCommand):
 			return False
 		elif self.timestamp_end is None and self.timestamp_begin is None:
 			return True
@@ -76,6 +85,24 @@ class SRTBlock(object):
 		t = self.text().lower()
 		t = re.sub(r'[^a-z \n]', '', t)
 		return '-'.join(t.split()[:6])
+
+	def bufferbegin(self, margin, previous=None):
+		timestamp_begin_seconds = timestamp_to_seconds(self.timestamp_begin)
+		if previous:
+			previous_end_seconds = timestamp_to_seconds(previous.timestamp_end)
+			new_begin = max(previous_end_seconds, timestamp_begin_seconds - margin)
+		else:
+			new_begin = timestamp_begin_seconds - margin
+		self.timestamp_begin = seconds_to_timestamp(new_begin)
+
+	def bufferend(self, margin, previous=None, next=None):
+		timestamp_end_seconds = timestamp_to_seconds(self.timestamp_end)
+		if next:
+			next_end_seconds = timestamp_to_seconds(next.timestamp_begin)
+			new_end = min(next_begin_seconds, timestamp_end_seconds + margin)
+		else:
+			new_end = timestamp_end_seconds + margin
+		self.timestamp_end = seconds_to_timestamp(new_end)
 
 	def __str__(self):
 		return "{begin} - {end}: {text}".format(
@@ -96,6 +123,10 @@ def splitsrt(fname):
 			continue
 		elif unit.strip() == 'BREAK':
 			ret.append(SRTBreak())
+		elif unit.strip() == 'BEGIN':
+			ret.append(SRTBegin())
+		elif unit.strip() == 'END':
+			ret.append(SRTEnd())
 		else:
 			try:
 				lines = unit.splitlines()
@@ -108,8 +139,50 @@ def splitsrt(fname):
 				print >> sys.stderr, unit
 	return ret
 
-def combinesrt(units):
+class UnitIterator(object):
+
+	def __init__(self, units):
+		self.iterator = iter(units)
+		self.unit = None
+		self.previous_unit, self.previous_block = None, None
+
+	def next(self):
+		if isinstance(self.unit, SRTUnit):
+			self.previous_unit = self.unit
+		self.unit = self.iterator.next()
+		if self.previous_block and isinstance(self.unit, SRTUnit):
+			self.previous_block.bufferend(BLOCK_MARGIN, self.unit)
+			self.previous_block = None
+		return self.unit
+
+def combinesrtmanual(units):
 	ret = []
+	unit = None
+	current_block = SRTBlock()
+	iterator = UnitIterator(units)
+	try:
+		while True:
+			unit = iterator.next()
+			while not isinstance(unit, SRTBegin):
+				unit = iterator.next()
+			current_block = SRTBlock()
+			bookend_begin = iterator.previous_unit
+
+			while not isinstance(unit, SRTEnd):
+				unit = iterator.next()
+				current_block.add(unit)
+
+			ret.append(current_block)
+			current_block.bufferbegin(BLOCK_MARGIN, bookend_begin)
+			iterator.previous_block = current_block
+
+	except StopIteration:
+		ret = [block for block in ret if block.text()]
+		return ret
+
+def combinesrtauto(units):
+	ret = []
+	# TODO: auto-margin here too.
 	current_block = SRTBlock()
 	for unit in units:
 		if not current_block.should_add(unit):
@@ -144,6 +217,8 @@ optparser.add_option('-d', '--db',  help="Filename of the quotes.db output.", de
 optparser.add_option('-v', '--vid', help="Filename of the video file.", dest="vid_fname")
 optparser.add_option('-s', '--srt', help="Filename of the .srt file.", dest="srt_fname")
 optparser.add_option('-o', '--out', help="Directory to place output files.", dest="output_dname")
+optparser.add_option('--auto', help="Partition .srt files automatically.", dest="auto", action="store_true", default=False)
+optparser.add_option('--dryrun', help="Don't actually construct .srt files, only output commands.", dest="dryrun", action="store_true", default=False)
 
 if __name__ == '__main__':
 	(options, args) = optparser.parse_args()
@@ -165,7 +240,10 @@ if __name__ == '__main__':
 		sys.exit(0)
 
 	units = splitsrt(options.srt_fname)
-	blocks = combinesrt(units)
+	if options.auto:
+		blocks = combinesrtauto(units)
+	else:
+		blocks = combinesrtmanual(units)
 	totalwords = 0
 
 	if command == 'process':
@@ -182,8 +260,8 @@ if __name__ == '__main__':
 			totalwords += len(block.text().split())
 
 		if command == 'process':
-			start = timestamp_to_seconds(block.timestamp_begin) - BLOCK_MARGIN
-			diff = timestamp_to_seconds(block.timestamp_end) - timestamp_to_seconds(block.timestamp_begin) + BLOCK_MARGIN * 2
+			start = timestamp_to_seconds(block.timestamp_begin)
+			diff = timestamp_to_seconds(block.timestamp_end) - timestamp_to_seconds(block.timestamp_begin)
 			build_cmd = "ffmpeg -y -i {fname} -ss {start} -t {diff} -sn -vcodec libx264 -acodec libmp3lame {outfile}".format(
 				fname=options.vid_fname,
 				start=seconds_to_timestamp(start),
@@ -193,14 +271,21 @@ if __name__ == '__main__':
 			screencap_cmd = "ffmpeg -y -i {clip_fname} -ss 00:00:01 -vframes 1 {outfile}".format(
 				clip_fname=os.path.join(options.output_dname, block.title() + '.mkv'),
 				outfile=os.path.join(options.output_dname, block.title() + '.mkv.jpg'))
-
-			assert os.system(build_cmd) == 0, "Build command failed: %s" % build_cmd
-			assert os.system(screencap_cmd) == 0, "Screencap command failed: %s" % screencap_cmd
-
-			# Insert quote information into SQLLite DB.
-			cursor.execute("INSERT INTO quotes (title, video_url, preview_url, quote) VALUES (?, ?, ?, ?)",
+			quotes_sql = (
+				"REPLACE INTO quotes (title, video_url, preview_url, quote) VALUES (?, ?, ?, ?)",
 				(block.title(), block.title() + '.mkv', block.title() + '.mkv.jpg', block.text())
 				)
+
+			if options.dryrun:
+				print build_cmd
+				print screencap_cmd
+				print quotes_sql
+				print
+			else:
+				assert os.system(build_cmd) == 0, "Build command failed: %s" % build_cmd
+				assert os.system(screencap_cmd) == 0, "Screencap command failed: %s" % screencap_cmd
+				# Insert quote information into SQLLite DB.
+				cursor.execute(*quotes_sql)
 
 	if command == 'info':
 		average = float(totalwords) / len(blocks)
