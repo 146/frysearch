@@ -47,6 +47,20 @@ body {
 	margin: 0;
 	right: 0;
 	top: 0;
+	height: 60px;
+	width: 60px;
+	margin: 10px;
+}
+
+#closebutton {
+	position: absolute;
+	right: 20px;
+	top: 20px;
+	padding: 10px;
+	background-color: black;
+	color: white;
+	font-weight: bold;
+	border-radius: 5px;
 }
 
 .quote {
