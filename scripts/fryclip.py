@@ -5,6 +5,7 @@ import re
 import sqlite3
 import os
 import commands
+import json
 from optparse import OptionParser
 
 BLOCK_GAP = 1.0
@@ -40,6 +41,7 @@ class SRTUnit(object):
 		self.unit_id = unit_id
 		self.timestamp_begin = timestamp_begin
 		self.timestamp_end = timestamp_end
+		text = text.replace('\xef\xac\x81', 'fi').replace('\xef\xac\x82', 'fl')
 		self.text = ' '.join(text.splitlines())
 
 	def __str__(self):
@@ -90,9 +92,9 @@ class SRTBlock(object):
 		timestamp_begin_seconds = timestamp_to_seconds(self.timestamp_begin)
 		if previous:
 			previous_end_seconds = timestamp_to_seconds(previous.timestamp_end)
-			new_begin = max(previous_end_seconds, timestamp_begin_seconds - margin)
+			new_begin = max(previous_end_seconds, timestamp_begin_seconds - margin, 0)
 		else:
-			new_begin = timestamp_begin_seconds - margin
+			new_begin = max(timestamp_begin_seconds - margin, 0)
 		self.timestamp_begin = seconds_to_timestamp(new_begin)
 
 	def bufferend(self, margin, previous=None, next=None):
@@ -262,18 +264,28 @@ if __name__ == '__main__':
 		if command == 'process':
 			start = timestamp_to_seconds(block.timestamp_begin)
 			diff = timestamp_to_seconds(block.timestamp_end) - timestamp_to_seconds(block.timestamp_begin)
+			clip_fname = block.title() + '.mp4'
+			clip_preview_fname = block.title() + '-preview.jpg'
+
 			build_cmd = "ffmpeg -y -i {fname} -ss {start} -t {diff} -sn -vcodec libx264 -acodec libmp3lame {outfile}".format(
 				fname=options.vid_fname,
 				start=seconds_to_timestamp(start),
 				diff=diff,
-				outfile=os.path.join(options.output_dname, block.title() + '.mkv')
+				outfile=os.path.join(options.output_dname, clip_fname)
 				)
 			screencap_cmd = "ffmpeg -y -i {clip_fname} -ss 00:00:01 -vframes 1 {outfile}".format(
-				clip_fname=os.path.join(options.output_dname, block.title() + '.mkv'),
-				outfile=os.path.join(options.output_dname, block.title() + '.mkv.jpg'))
+				clip_fname=os.path.join(options.output_dname, clip_fname),
+				outfile=os.path.join(options.output_dname, clip_preview_fname))
+
+			document_info = {
+				'url': 'videos/{0}'.format(clip_fname),
+				'preview': 'videos/{0}'.format(clip_preview_fname),
+				'orig': options.vid_fname,
+
+			}
 			quotes_sql = (
-				"REPLACE INTO quotes (title, video_url, preview_url, quote) VALUES (?, ?, ?, ?)",
-				(block.title(), block.title() + '.mkv', block.title() + '.mkv.jpg', block.text())
+				"REPLACE INTO documents (document_title, document_text, document_info_json) VALUES (?, ?, ?)",
+				(block.title(), block.text(), json.dumps(document_info))
 				)
 
 			if options.dryrun:

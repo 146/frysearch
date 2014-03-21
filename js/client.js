@@ -58,12 +58,13 @@ function installSearchBarHandlers() {
 }
 
 function createDocumentPreviewElement(documentInfo, tokens) {
-    var url = 'videos/' + documentInfo.url;
+    var url = documentInfo.url;
+    var preview = documentInfo.preview;
     var quote = documentInfo.document;
 
     var $newElement = $('<div class="video-preview"></div>');
     var $newLink = $('<a></a>').attr('href', '#' + url);
-    var $newImage = $('<img></img>').attr('src', url + '.jpg');
+    var $newImage = $('<img></img>').attr('src', preview);
     var $newQuote = $('<p class="quote"></p>');
 
     if (tokens !== undefined) {

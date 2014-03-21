@@ -3,7 +3,6 @@
 import sys
 import string
 import json
-import quotes
 import sqlite3
 
 def _tokenize(document):
@@ -27,7 +26,7 @@ class SearchIndex(object):
 		self.document_id += 1
 		return self.document_id
 
-	def add_document(self, document, document_info):
+	def add_document(self, document, info):
 		document_id = self.get_document_id()
 		tokens = _tokenize(document)
 		for token in tokens:
@@ -35,7 +34,7 @@ class SearchIndex(object):
 		self.forward_index[document_id] = {
 			'document': document
 			}
-		self.forward_index[document_id].update(document_info)
+		self.forward_index[document_id].update(info)
 
 	def to_json(self):
 		sorted_index = [
@@ -55,12 +54,13 @@ if __name__ == '__main__':
 	dbconn = sqlite3.connect(dbname)
 	cursor = dbconn.cursor()
 
-	cursor.execute('SELECT * FROM quotes')
+	cursor.execute('SELECT * FROM documents')
 	while True:
 		row = cursor.fetchone()
 		if row:
-			_, url, _, text = row
-			index.add_document(text, {'url': url})
+			title, text, document_info_json = row
+			document_info = json.loads(document_info_json)
+			index.add_document(text, document_info)
 		else:
 			break
 	print "this.RAW_INDEX = " + index.to_json() + ";"
