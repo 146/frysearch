@@ -31,9 +31,11 @@ function installVideoHandlers() {
     });
     $('video').bind('play playing', function(e) {
         e.target.isPlaying = true;
+        $(e.target).removeClass('paused');
     });
     $('video').bind('pause ended', function(e) {
         e.target.isPlaying = false;
+        $(e.target).addClass('paused');
     });
 }
 
@@ -74,18 +76,20 @@ function createDocumentPreviewElement(documentInfo, tokens) {
         });
     }
 
+    $newImage.fadeIn('normal');
+
     $newQuote.html(quote);
     $newLink.append($newImage);
     $newLink.append($newQuote);
     $newElement.append($newLink);
     $newElement.click(function() {
-        showVideo(url);
+        showVideo(url, true);
     });
 
     return $newElement;
 }
 
-function showVideo(url) {
+function showVideo(url, fadeIn) {
     var $newVideo = $('<video>' +
                       'Your browser does not support the <code>video</code>element.' +
                       '</video>');
@@ -93,16 +97,22 @@ function showVideo(url) {
 
     $('#video-box').empty();
     $('#video-box').append($newVideo);
-    $('#video-box-container').show();
-    $('#video-box').show();
-    installVideoHandlers();    
-    playVideo();
+    if (fadeIn) {
+        $('#video-box-container').fadeIn();
+        $('#video-box').fadeIn('fast', playVideo);    
+        installVideoHandlers();
+    } else {
+        $('#video-box-container').show();
+        $('#video-box').show();
+        installVideoHandlers();
+        playVideo();
+    }
 }
 
 function hideVideo() {
     $('#video-box video')[0].pause();
-    $('#video-box-container').hide();
-    $('#video-box').hide();
+    $('#video-box-container').fadeOut('fast');
+    $('#video-box').fadeOut('fast');
     window.location.hash = "";
 }
 

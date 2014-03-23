@@ -74,11 +74,20 @@ body {
 
 }
 
+video.paused {
+	
+}
+
 .video-preview {
 	background-color: black;
 	padding: 5px;
 	padding-top: 10px;
 	margin-top: 20px;
+}
+
+.video-preview img {
+	height: 190px;
+	width: 290px;
 }
 
 .lightbox-background {
