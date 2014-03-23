@@ -1,0 +1,46 @@
+<html>
+<head>
+<title>Relevant Futurama Quote</title>
+{% for cssfile in cssfiles %}
+<link rel="stylesheet" type="text/css" href="{{ cssfile }}"></link>
+{% endfor %}
+{% for jsfile in jsfiles %}
+<script type="text/javascript" src="{{ jsfile }}"></script>
+{% endfor %}
+</head>
+<body>
+	<div class="container">
+
+		<div id="container-title">
+			<h1>Relevant Futurama Quote</h1>
+		</div>
+		<div id="container-searchbar">
+			<input id="searchbar"></input>
+			<img id="searchbutton" src="{{ searchbuttonurl }}"/>
+		</div>
+
+		<div id="video-box-container" style="display:none">
+			<div class="lightbox-background"></div>
+			<button id="closebutton">Close Video</button>
+		</div>
+		<div id="video-box" style="display:none">
+		</div>
+
+		<div id="container-searchresults">
+
+			<div class="row">
+				<div id="results-col-1" class="span4 results-col">
+				</div>
+				<div id="results-col-2" class="span4 results-col">
+				</div>
+				<div id="results-col-3" class="span4 results-col">
+				</div>
+			</div>
+
+		</div>
+
+	</div>
+	<div id="container-footer">
+	</div>
+</body>
+</html>
