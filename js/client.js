@@ -76,7 +76,7 @@ function createDocumentPreviewElement(documentInfo, tokens) {
         });
     }
 
-    $newImage.fadeIn('normal');
+    $newImage.fadeIn('fast');
 
     $newQuote.html(quote);
     $newLink.append($newImage);
@@ -98,7 +98,7 @@ function showVideo(url, fadeIn) {
     $('#video-box').empty();
     $('#video-box').append($newVideo);
     if (fadeIn) {
-        $('#video-box-container').fadeIn();
+        $('#video-box-container').fadeIn('fast');
         $('#video-box').fadeIn('fast', playVideo);    
         installVideoHandlers();
     } else {
