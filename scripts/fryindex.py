@@ -20,21 +20,24 @@ class SearchIndex(object):
 	def __init__(self):
 		self.forward_index = {}
 		self.postings_list = {}
+		self.title_to_id = {}
 		self.document_id = 0
 
 	def get_document_id(self):
 		self.document_id += 1
 		return self.document_id
 
-	def add_document(self, document, info):
+	def add_document(self, title, document, info):
 		document_id = self.get_document_id()
 		tokens = _tokenize(document)
 		for token in tokens:
 			self.postings_list.setdefault(token, []).append(document_id)
 		self.forward_index[document_id] = {
-			'document': document
+			'title': title,
+			'document': document,
 			}
 		self.forward_index[document_id].update(info)
+		self.title_to_id[title] = document_id
 
 	def to_json(self):
 		sorted_index = [
@@ -45,6 +48,7 @@ class SearchIndex(object):
 		full_index = {
 			'sortedIndex': sorted_index,
 			'forwardIndex': self.forward_index,
+			'titleToId': self.title_to_id,
 		}
 		return json.dumps(full_index)
 
@@ -60,7 +64,7 @@ if __name__ == '__main__':
 		if row:
 			title, text, document_info_json = row
 			document_info = json.loads(document_info_json)
-			index.add_document(text, document_info)
+			index.add_document(title, text, document_info)
 		else:
 			break
 	print "this.RAW_INDEX = " + index.to_json() + ";"

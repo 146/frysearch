@@ -134,9 +134,16 @@
 
     exports.SortedIndex = ClassCreate({
 
-        __init__: function(index, forwardIndex) {
+        __init__: function(index, forwardIndex, titleToId) {
             this.index = index;
             this.forwardIndex = forwardIndex;
+            this.titleToId = titleToId;
+        },
+
+        getUrlFromTitle: function(title) {
+            var documentId = this.titleToId[title];
+            var documentInfo = this.forwardIndex[documentId];
+            return documentInfo.url;
         },
 
         getTokenIterator: function(token) {

@@ -1,17 +1,18 @@
 $(document).ready(function() {
 
-    installSearchBarHandlers();
+    var index = new FrySearch.SortedIndex(RAW_INDEX.sortedIndex, RAW_INDEX.forwardIndex, RAW_INDEX.titleToId);
+    installSearchBarHandlers(index);
     $('#searchbar').focus();
     $('#video-box-container').click(function(e) {
         hideVideo();
     });
-    loadVideoFromUrl();
+    loadVideoFromUrl(index);
 });
 
-function loadVideoFromUrl() {
+function loadVideoFromUrl(index) {
     if (window.location.hash != "") {
-        var url = window.location.hash.slice(1);
-        showVideo(url);
+        var title = window.location.hash.slice(1);
+        showVideo(index.getUrlFromTitle(title));
     }
 }
 
@@ -36,8 +37,7 @@ function installVideoHandlers() {
     });
 }
 
-function installSearchBarHandlers() {
-    var index = new FrySearch.SortedIndex(RAW_INDEX.sortedIndex, RAW_INDEX.forwardIndex);
+function installSearchBarHandlers(index) {
     var timer = null;
     var last = null;
     function update(target) {
@@ -58,12 +58,13 @@ function installSearchBarHandlers() {
 }
 
 function createDocumentPreviewElement(documentInfo, tokens) {
+    var title = documentInfo.title;
     var url = documentInfo.url;
     var preview = documentInfo.preview;
     var quote = documentInfo.document;
 
     var $newElement = $('<div class="video-preview"></div>');
-    var $newLink = $('<a></a>').attr('href', '#' + url);
+    var $newLink = $('<a></a>').attr('href', '#' + title);
     var $newImage = $('<img></img>').attr('src', preview);
     var $newQuote = $('<p class="quote"></p>');
 
