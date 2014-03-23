@@ -14,7 +14,7 @@ def build_index_html(jsfiles, cssfiles, otherfiles=None):
 		**otherfiles
 		)
 
-	store = flib.S3Store('frystatic')
+	store = flib.S3Store('relevantfuturamaquote.com')
 	store.puts('index.html', index_html, content_type='text/html', public=True)
 	return store.url('index.html')
 
